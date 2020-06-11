@@ -7,6 +7,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+var (
+	notFoundMessage      = encodeMessage("Resource not found")
+	internalErrorMessage = encodeMessage("Internal server error")
+)
+
 type Router interface {
 	http.Handler
 
@@ -26,7 +31,7 @@ func NewRouter() Router {
 	r.HandleMethodNotAllowed = false
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write(encodeMessage("Resource not found"))
+		_, _ = w.Write(notFoundMessage)
 	})
 
 	return &rootRouter{r, make([]Handle, 0)}
@@ -91,7 +96,7 @@ func (r *rootRouter) handle(method, path string, handle Handle) {
 		if !ok {
 			// if it is not ClientError, assume that it is ServerError.
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write(encodeMessage("Internal server error"))
+			_, _ = w.Write(internalErrorMessage)
 			return
 		}
 
