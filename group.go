@@ -1,43 +1,49 @@
 package aqua
 
+import "net/http"
+
 type group struct {
-	prefix string
-	middleware []Handle
+	prefix       string
+	middleware   []Handle
 	parentRouter Router
 }
 
-func (r *group) NewGroup(prefix string) Router {
-	return &group{prefix, make([]Handle, 0), r}
+func (g *group) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	g.parentRouter.ServeHTTP(w, rq)
 }
 
-func (r *group) Use(handle Handle) {
-	r.middleware = append(r.middleware, handle)
+func (g *group) NewGroup(prefix string) Router {
+	return &group{prefix, make([]Handle, 0), g}
 }
 
-func (r *group) GET(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.GET(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) Use(handle Handle) {
+	g.middleware = append(g.middleware, handle)
 }
 
-func (r *group) HEAD(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.HEAD(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) GET(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.GET(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }
 
-func (r *group) OPTIONS(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.OPTIONS(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) HEAD(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.HEAD(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }
 
-func (r *group) POST(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.POST(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) OPTIONS(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.OPTIONS(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }
 
-func (r *group) PUT(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.PUT(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) POST(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.POST(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }
 
-func (r group) PATCH(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.PATCH(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g *group) PUT(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.PUT(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }
 
-func (r *group) DELETE(path string, handle Handle, mw ...Handle) {
-	r.parentRouter.DELETE(r.prefix + path, chanHandles(handle, append(r.middleware, mw...)...))
+func (g group) PATCH(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.PATCH(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
+}
+
+func (g *group) DELETE(path string, handle Handle, mw ...Handle) {
+	g.parentRouter.DELETE(g.prefix+path, chanHandles(handle, append(g.middleware, mw...)...))
 }

@@ -8,6 +8,8 @@ import (
 )
 
 type Router interface {
+	http.Handler
+
 	Use(handle Handle)
 	NewGroup(prefix string) Router
 	GET(path string, handle Handle, mw ...Handle)
@@ -34,6 +36,10 @@ type rootRouter struct {
 	*httprouter.Router
 
 	middleware []Handle
+}
+
+func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	r.Router.ServeHTTP(w, rq)
 }
 
 func (r *rootRouter) Use(handle Handle) {
