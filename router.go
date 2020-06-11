@@ -56,36 +56,36 @@ func (r *rootRouter) NewGroup(prefix string) Router {
 }
 
 func (r *rootRouter) GET(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodGet, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodGet, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) HEAD(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodHead, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodHead, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) OPTIONS(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodOptions, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodOptions, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) POST(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPost, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodPost, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) PUT(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPut, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodPut, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) PATCH(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPatch, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodPatch, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodDelete, path, chainMiddleware(handle, mw...))
+	r.handle(http.MethodDelete, path, chainMiddleware(handle, append(r.middleware, mw...)...))
 }
 
 func (r *rootRouter) handle(method, path string, handle Handle) {
 	r.Router.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		err := chainMiddleware(handle, r.middleware...)(w, rq, p)
+		err := handle(w, rq, p)
 		if err == nil {
 			return
 		}
