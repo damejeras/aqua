@@ -16,7 +16,7 @@ func chanHandles(handle Handle, mw ...Handle) Handle {
 		var err error
 
 		for i := range mw {
-			err = mw[len(mw)-1-i](w, rq, p)
+			err = mw[i](w, rq, p)
 			if err != nil {
 				return err
 			}
