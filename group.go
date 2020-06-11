@@ -16,8 +16,8 @@ func (g *group) NewGroup(prefix string) Router {
 	return &group{prefix, make([]Handle, 0), g}
 }
 
-func (g *group) Use(handle Handle) {
-	g.middleware = append(g.middleware, handle)
+func (g *group) Use(mw ...Handle) {
+	g.middleware = append(g.middleware, mw...)
 }
 
 func (g *group) GET(path string, handle Handle, mw ...Handle) {

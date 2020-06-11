@@ -15,7 +15,7 @@ var (
 type Router interface {
 	http.Handler
 
-	Use(handle Handle)
+	Use(mw ...Handle)
 	NewGroup(prefix string) Router
 	GET(path string, handle Handle, mw ...Handle)
 	HEAD(path string, handle Handle, mw ...Handle)
@@ -47,8 +47,8 @@ func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	r.Router.ServeHTTP(w, rq)
 }
 
-func (r *rootRouter) Use(handle Handle) {
-	r.middleware = append(r.middleware, handle)
+func (r *rootRouter) Use(mw ...Handle) {
+	r.middleware = append(r.middleware, mw...)
 }
 
 func (r *rootRouter) NewGroup(prefix string) Router {
