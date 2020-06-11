@@ -1,7 +1,6 @@
 package aqua
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -34,13 +33,14 @@ func NewRouter() Router {
 		_, _ = w.Write(notFoundMessage)
 	})
 
-	return &rootRouter{r, make([]Middleware, 0)}
+	return &rootRouter{r, make([]Middleware, 0), defaultErrorHandler}
 }
 
 type rootRouter struct {
 	*httprouter.Router
 
-	middleware []Middleware
+	middleware   []Middleware
+	errorHandler Middleware
 }
 
 func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
@@ -85,22 +85,6 @@ func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
 
 func (r *rootRouter) handle(method, path string, handle Handle) {
 	r.Router.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		err := handle(w, rq, p)
-		if err == nil {
-			return
-		}
-
-		log.Printf("ERROR: %v", err)
-
-		clientError, ok := err.(ClientError)
-		if !ok {
-			// if it is not ClientError, assume that it is ServerError.
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write(internalErrorMessage)
-			return
-		}
-
-		w.WriteHeader(clientError.ResponseStatus())
-		_, _ = w.Write(clientError.ResponseBody())
+		_ = r.errorHandler(handle)(w, rq, p)
 	})
 }

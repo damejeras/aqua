@@ -1,5 +1,11 @@
 package aqua
 
+import (
+	"github.com/julienschmidt/httprouter"
+	"log"
+	"net/http"
+)
+
 type ClientError interface {
 	Error() string
 	ResponseBody() []byte
@@ -37,4 +43,26 @@ func (e *Error) ResponseStatus() int {
 
 func encodeMessage(message string) []byte {
 	return []byte(`{"message": "` + message + `"}`)
+}
+
+func defaultErrorHandler(next Handle) Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+		err := next(w, r, p)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+
+			clientError, ok := err.(ClientError)
+			if !ok {
+				// if it is not ClientError, assume that it is ServerError.
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write(internalErrorMessage)
+				return nil
+			}
+
+			w.WriteHeader(clientError.ResponseStatus())
+			_, _ = w.Write(clientError.ResponseBody())
+		}
+
+		return nil
+	}
 }
