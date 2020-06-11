@@ -15,15 +15,15 @@ var (
 type Router interface {
 	http.Handler
 
-	Use(mw ...Handle)
+	Use(mw ...Middleware)
 	NewGroup(prefix string) Router
-	GET(path string, handle Handle, mw ...Handle)
-	HEAD(path string, handle Handle, mw ...Handle)
-	OPTIONS(path string, handle Handle, mw ...Handle)
-	POST(path string, handle Handle, mw ...Handle)
-	PUT(path string, handle Handle, mw ...Handle)
-	PATCH(path string, handle Handle, mw ...Handle)
-	DELETE(path string, handle Handle, mw ...Handle)
+	GET(path string, handle Handle, mw ...Middleware)
+	HEAD(path string, handle Handle, mw ...Middleware)
+	OPTIONS(path string, handle Handle, mw ...Middleware)
+	POST(path string, handle Handle, mw ...Middleware)
+	PUT(path string, handle Handle, mw ...Middleware)
+	PATCH(path string, handle Handle, mw ...Middleware)
+	DELETE(path string, handle Handle, mw ...Middleware)
 }
 
 func NewRouter() Router {
@@ -34,58 +34,58 @@ func NewRouter() Router {
 		_, _ = w.Write(notFoundMessage)
 	})
 
-	return &rootRouter{r, make([]Handle, 0)}
+	return &rootRouter{r, make([]Middleware, 0)}
 }
 
 type rootRouter struct {
 	*httprouter.Router
 
-	middleware []Handle
+	middleware []Middleware
 }
 
 func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	r.Router.ServeHTTP(w, rq)
 }
 
-func (r *rootRouter) Use(mw ...Handle) {
+func (r *rootRouter) Use(mw ...Middleware) {
 	r.middleware = append(r.middleware, mw...)
 }
 
 func (r *rootRouter) NewGroup(prefix string) Router {
-	return &group{prefix, make([]Handle, 0), r}
+	return &group{prefix, make([]Middleware, 0), r}
 }
 
-func (r *rootRouter) GET(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodGet, path, chanHandles(handle, mw...))
+func (r *rootRouter) GET(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodGet, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) HEAD(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodHead, path, chanHandles(handle, mw...))
+func (r *rootRouter) HEAD(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodHead, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) OPTIONS(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodOptions, path, chanHandles(handle, mw...))
+func (r *rootRouter) OPTIONS(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodOptions, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) POST(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodPost, path, chanHandles(handle, mw...))
+func (r *rootRouter) POST(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodPost, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) PUT(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodPut, path, chanHandles(handle, mw...))
+func (r *rootRouter) PUT(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodPut, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) PATCH(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodPatch, path, chanHandles(handle, mw...))
+func (r *rootRouter) PATCH(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodPatch, path, chainMiddleware(handle, mw...))
 }
 
-func (r *rootRouter) DELETE(path string, handle Handle, mw ...Handle) {
-	r.handle(http.MethodDelete, path, chanHandles(handle, mw...))
+func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
+	r.handle(http.MethodDelete, path, chainMiddleware(handle, mw...))
 }
 
 func (r *rootRouter) handle(method, path string, handle Handle) {
 	r.Router.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		err := chanHandles(handle, r.middleware...)(w, rq, p)
+		err := chainMiddleware(handle, r.middleware...)(w, rq, p)
 		if err == nil {
 			return
 		}
