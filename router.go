@@ -6,11 +6,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var (
-	notFoundMessage      = encodeMessage("Resource not found")
-	internalErrorMessage = encodeMessage("Internal server error")
-)
-
 type Router interface {
 	http.Handler
 
@@ -25,14 +20,13 @@ type Router interface {
 	DELETE(path string, handle Handle, mw ...Middleware)
 }
 
-func NewRouter() Router {
-	rr := rootRouter{Router: httprouter.New(), middleware: []Middleware{defaultErrorHandler}}
+func NewRouter(notFoundHandler http.Handler) Router {
+	rr := rootRouter{Router: httprouter.New(), middleware: []Middleware{}}
 	rr.HandleMethodNotAllowed = false
 
 	rr.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = chainMiddleware(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write(notFoundMessage)
+			notFoundHandler.ServeHTTP(w, r)
 
 			return nil
 		}, rr.middleware...)(w, r, httprouter.Params{})
