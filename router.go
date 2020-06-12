@@ -26,7 +26,7 @@ type Router interface {
 }
 
 func NewRouter() Router {
-	rr := rootRouter{Router: httprouter.New(), middleware: make([]Middleware, 0)}
+	rr := rootRouter{Router: httprouter.New(), middleware: make([]Middleware, 0), errorHandler: defaultErrorHandler}
 	rr.HandleMethodNotAllowed = false
 
 	rr.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
