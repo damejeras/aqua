@@ -26,16 +26,16 @@ type Router interface {
 }
 
 func NewRouter() Router {
-	rr := rootRouter{Router: httprouter.New(), middleware: make([]Middleware, 0), errorHandler: defaultErrorHandler}
+	rr := rootRouter{Router: httprouter.New(), middleware: []Middleware{defaultErrorHandler}}
 	rr.HandleMethodNotAllowed = false
 
 	rr.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = rr.errorHandler(chainMiddleware(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+		_ = chainMiddleware(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write(notFoundMessage)
 
 			return nil
-		}, rr.middleware...))(w, r, httprouter.Params{})
+		}, rr.middleware...)(w, r, httprouter.Params{})
 	})
 
 	return &rr
@@ -44,8 +44,7 @@ func NewRouter() Router {
 type rootRouter struct {
 	*httprouter.Router
 
-	middleware   []Middleware
-	errorHandler Middleware
+	middleware []Middleware
 }
 
 func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
@@ -89,7 +88,7 @@ func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
 }
 
 func (r *rootRouter) handle(method, path string, handle Handle) {
-	r.Router.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		_ = r.errorHandler(handle)(w, rq, p)
+	r.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
+		_ = handle(w, rq, p)
 	})
 }
