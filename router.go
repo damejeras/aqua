@@ -26,14 +26,19 @@ type Router interface {
 }
 
 func NewRouter() Router {
-	r := httprouter.New()
-	r.HandleMethodNotAllowed = false
-	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write(notFoundMessage)
+	rr := rootRouter{Router: httprouter.New(), middleware: make([]Middleware, 0)}
+	rr.HandleMethodNotAllowed = false
+
+	rr.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = rr.errorHandler(chainMiddleware(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write(notFoundMessage)
+
+			return nil
+		}, rr.middleware...))(w, r, httprouter.Params{})
 	})
 
-	return &rootRouter{r, make([]Middleware, 0), defaultErrorHandler}
+	return &rr
 }
 
 type rootRouter struct {
