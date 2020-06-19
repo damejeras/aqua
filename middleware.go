@@ -1,7 +1,6 @@
 package aqua
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
@@ -9,7 +8,7 @@ type Middleware func(next Handle) Handle
 
 func chainMiddleware(handle Handle, mw ...Middleware) Handle {
 	if handle == nil {
-		handle = func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+		handle = func(w http.ResponseWriter, r *http.Request, p Params) error {
 			return nil
 		}
 	}

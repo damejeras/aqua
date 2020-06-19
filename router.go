@@ -20,19 +20,24 @@ type Router interface {
 	DELETE(path string, handle Handle, mw ...Middleware)
 }
 
-func NewRouter(notFoundHandler http.Handler) Router {
-	rr := rootRouter{Router: httprouter.New(), middleware: []Middleware{}}
-	rr.HandleMethodNotAllowed = false
+func NewRouter(options ...Option) Router {
+	router := httprouter.Router{
+		RedirectTrailingSlash:  true,
+		RedirectFixedPath:      true,
+		HandleMethodNotAllowed: false,
+		HandleOPTIONS:          true,
+	}
 
-	rr.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = chainMiddleware(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-			notFoundHandler.ServeHTTP(w, r)
+	wrappedRouter := rootRouter{
+		Router:     &router,
+		middleware: make([]Middleware, 0),
+	}
 
-			return nil
-		}, rr.middleware...)(w, r, httprouter.Params{})
-	})
+	for _, option := range options {
+		option(&wrappedRouter)
+	}
 
-	return &rr
+	return &wrappedRouter
 }
 
 type rootRouter struct {
@@ -83,6 +88,6 @@ func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
 
 func (r *rootRouter) handle(method, path string, handle Handle) {
 	r.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		_ = handle(w, rq, p)
+		_ = handle(w, rq, Params{p})
 	})
 }
