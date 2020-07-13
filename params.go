@@ -1,9 +1,15 @@
 package aqua
 
 import (
-	`github.com/julienschmidt/httprouter`
-	`strconv`
-	`fmt`
+	"fmt"
+	"strconv"
+
+	"github.com/julienschmidt/httprouter"
+)
+
+var (
+	ErrInvalidParamType = fmt.Errorf("unexpected param type")
+	ErrMissingParam     = fmt.Errorf("missing param")
 )
 
 // Params wraps httprouter.Params and provides additional param type conversion methods
@@ -47,8 +53,3 @@ func (p Params) Float64(name string) (float64, error) {
 
 	return f, nil
 }
-
-var (
-	ErrInvalidParamType = fmt.Errorf("unexpected param type")
-	ErrMissingParam     = fmt.Errorf("missing param")
-)

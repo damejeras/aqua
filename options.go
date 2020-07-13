@@ -24,3 +24,12 @@ func WithNotFoundHandler(handle Handle) Option {
 		})
 	}
 }
+
+// WithErrorLogging registers error logging middleware. Middleware writes response in Content-Type: application/json
+// In case of aqua.Error provided message is printed. If error is not aqua.Error it is seen as http.StatusInternalServerError
+// for the API caller.
+func WithErrorLogging(logger ErrorLogger) Option {
+	return func(rr *rootRouter) {
+		rr.middleware = append(rr.middleware, errorHandlingMiddleware(logger))
+	}
+}
