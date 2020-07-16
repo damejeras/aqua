@@ -43,21 +43,21 @@ func defaultErrorHandler(next Handle) Handle {
 }
 
 var defaultNotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
+	_ = defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
 		return &Error{
 			Code:    http.StatusNotFound,
 			Message: "not found",
 			Cause:   nil,
 		}
-	})
+	})(w, r, Params{})
 })
 
 var defaultMethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
+	_ = defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
 		return &Error{
 			Code:    http.StatusMethodNotAllowed,
 			Message: "method not allowed",
 			Cause:   nil,
 		}
-	})
+	})(w, r, Params{})
 })
