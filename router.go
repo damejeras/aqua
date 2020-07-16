@@ -24,13 +24,18 @@ func NewRouter(options ...Option) Router {
 	router := httprouter.Router{
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      true,
-		HandleMethodNotAllowed: false,
+		HandleMethodNotAllowed: true,
 		HandleOPTIONS:          true,
+		NotFound:               defaultNotFoundHandler,
+		MethodNotAllowed:       defaultMethodNotAllowedHandler,
 	}
 
 	wrappedRouter := rootRouter{
 		Router:     &router,
 		middleware: make([]Middleware, 0),
+		config: &Config{
+			ErrorHandler: defaultErrorHandler,
+		},
 	}
 
 	for _, option := range options {
@@ -44,50 +49,52 @@ type rootRouter struct {
 	*httprouter.Router
 
 	middleware []Middleware
+
+	config *Config
 }
 
-func (r *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	r.Router.ServeHTTP(w, rq)
+func (rr *rootRouter) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	rr.Router.ServeHTTP(w, rq)
 }
 
-func (r *rootRouter) Use(mw ...Middleware) {
-	r.middleware = append(r.middleware, mw...)
+func (rr *rootRouter) Use(mw ...Middleware) {
+	rr.middleware = append(rr.middleware, mw...)
 }
 
-func (r *rootRouter) NewGroup(prefix string) Router {
-	return &group{prefix, make([]Middleware, 0), r}
+func (rr *rootRouter) NewGroup(prefix string) Router {
+	return &group{prefix, make([]Middleware, 0), rr}
 }
 
-func (r *rootRouter) GET(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodGet, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) GET(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodGet, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) HEAD(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodHead, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) HEAD(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodHead, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) OPTIONS(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodOptions, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) OPTIONS(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodOptions, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) POST(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPost, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) POST(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodPost, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) PUT(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPut, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) PUT(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodPut, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) PATCH(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodPatch, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) PATCH(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodPatch, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
-	r.handle(http.MethodDelete, path, chainMiddleware(handle, append(r.middleware, mw...)...))
+func (rr *rootRouter) DELETE(path string, handle Handle, mw ...Middleware) {
+	rr.handle(http.MethodDelete, path, chainMiddleware(handle, append(rr.middleware, mw...)...))
 }
 
-func (r *rootRouter) handle(method, path string, handle Handle) {
-	r.Handle(method, path, func(w http.ResponseWriter, rq *http.Request, p httprouter.Params) {
-		_ = handle(w, rq, Params{p})
+func (rr *rootRouter) handle(method, path string, handle Handle) {
+	rr.Handle(method, path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		_ = rr.config.ErrorHandler(handle)(w, r, Params{p})
 	})
 }
