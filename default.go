@@ -2,6 +2,7 @@ package aqua
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -17,8 +18,6 @@ func defaultErrorHandler(next Handle) Handle {
 		err := next(w, r, p)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			defaultErrorLogger(err)
-
 			if aquaErr, ok := err.(Error); ok {
 				w.WriteHeader(aquaErr.Code)
 				if _, err = io.Copy(w, bytes.NewReader([]byte(`{"status": `+
@@ -44,20 +43,20 @@ func defaultErrorHandler(next Handle) Handle {
 
 var defaultNotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	_ = defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
-		return &Error{
+		return Error{
 			Code:    http.StatusNotFound,
 			Message: "not found",
-			Cause:   nil,
+			Cause:   fmt.Errorf("%s", r.URL.Path),
 		}
 	})(w, r, Params{})
 })
 
 var defaultMethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	_ = defaultErrorHandler(func(w http.ResponseWriter, r *http.Request, p Params) error {
-		return &Error{
+		return Error{
 			Code:    http.StatusMethodNotAllowed,
 			Message: "method not allowed",
-			Cause:   nil,
+			Cause:   fmt.Errorf("%s %s", r.Method, r.URL.Path),
 		}
 	})(w, r, Params{})
 })
