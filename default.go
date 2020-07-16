@@ -1,9 +1,7 @@
 package aqua
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,6 +15,7 @@ func defaultErrorHandler(next Handle) Handle {
 	return func(w http.ResponseWriter, r *http.Request, p Params) error {
 		err := next(w, r, p)
 		if err != nil {
+			defaultErrorLogger(err)
 			w.Header().Set("Content-Type", "application/json")
 			if aquaErr, ok := err.(Error); ok {
 				w.WriteHeader(aquaErr.Code)
@@ -28,10 +27,7 @@ func defaultErrorHandler(next Handle) Handle {
 				}
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
-				if _, err = io.Copy(
-					w,
-					bytes.NewReader([]byte(`{"status": 500, "message": "internal server error"}`)),
-				); err != nil {
+				if _, err = w.Write([]byte(`{"status": 500, "message": "internal server error"}`)); err != nil {
 					defaultErrorLogger(err)
 				}
 			}
