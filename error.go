@@ -1,9 +1,10 @@
 package aqua
 
 type Error struct {
-	Code    int
-	Message string
-	Cause   error
+	Code    int                    `json:"status"`
+	Message string                 `json:"message"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+	Cause   error                  `json:"-"`
 }
 
 func (err Error) Error() string {

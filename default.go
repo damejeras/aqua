@@ -1,10 +1,10 @@
 package aqua
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 func defaultErrorLogger(err error) {
@@ -19,10 +19,7 @@ func defaultErrorHandler(next Handle) Handle {
 			w.Header().Set("Content-Type", "application/json")
 			if aquaErr, ok := err.(Error); ok {
 				w.WriteHeader(aquaErr.Code)
-				if _, err = w.Write([]byte(`{"status": ` +
-					strconv.FormatInt(int64(aquaErr.Code), 10) +
-					`, "message": "` +
-					aquaErr.Message + `"}`)); err != nil {
+				if err = json.NewEncoder(w).Encode(aquaErr); err != nil {
 					defaultErrorLogger(err)
 				}
 			} else {
